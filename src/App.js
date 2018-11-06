@@ -2,18 +2,43 @@ import React, { Component } from 'react';
 import './App.css';
 
 class App extends Component {
+  state = {
+    locations: [],
+    fetchError: false,
+    center: {lat: 40.72477,lng: -74.002008}
+  }
+
+  componentDidMount() {
+    fetch(`https://api.foursquare.com/v2/venues/explore?client_id=QJ2RPGL0L5MVUQCYHDIO0PXBIRFHDPHC5VFVYVOWYQU5D0B3&client_secret=WQHUROLOPO0ZF1ASLZG0ANTJGKHNIF5DWN3FT5CVHCDV1N0I
+    &v=20180323&limit=10&ll=${this.state.center.lat},${this.state.center.lng}&query=coffee`)
+    .then((response) => {
+        return response.json();
+    })
+    .then((response) => {
+      this.setState({locations: response.response.groups[0].items});
+    })
+    .then(this.renderMap)
+    .catch((err) => {
+      this.setState({fetchError:true});
+    });
+  }
+
   renderMap = () => {
-    window.initMap = this.initMap;
     addScript(`https://maps.googleapis.com/maps/api/js?key=AIzaSyDr74hacqaOzOqckWb9TnmXYnk8AMyKCfk&callback=initMap`);
+    window.initMap = this.initMap;
   }
 
   initMap = () => {
     let map = new window.google.maps.Map(
-      document.getElementById('map'), {zoom: 4, center: {lat: -25.344, lng: 131.036}});
-  }
-
-  componentDidMount() {
-    this.renderMap();
+      document.getElementById('map'), {zoom: 16, center: this.state.center});
+    console.log(map);
+    this.state.locations.map((item) => {
+      let marker = new window.google.maps.Marker({
+        position: {lat: item.venue.location.lat, lng: item.venue.location.lng},
+        map: map,
+        title: item.venue.name
+      });
+    })
   }
 
   render() {
