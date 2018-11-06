@@ -30,13 +30,18 @@ class App extends Component {
 
   initMap = () => {
     let map = new window.google.maps.Map(
-      document.getElementById('map'), {zoom: 16, center: this.state.center});
-    console.log(map);
+      document.getElementById('map'), {zoom: 17, center: this.state.center});
+    
+    let infoWindow = new window.google.maps.InfoWindow();
     this.state.locations.map((item) => {
       let marker = new window.google.maps.Marker({
         position: {lat: item.venue.location.lat, lng: item.venue.location.lng},
         map: map,
-        title: item.venue.name
+      });
+      let contentString = `<p>${item.venue.name}</p><p>${item.venue.location.address}</p>`;
+      marker.addListener('click', () => {
+        infoWindow.setContent(contentString);
+        infoWindow.open(map,marker);
       });
     })
   }
