@@ -1,11 +1,20 @@
 import React, { Component } from 'react';
 import './App.css';
+import SearchBar from './SearchBar';
+import SearchResults from './SearchResults';
+import escapeRegExp from 'escape-string-regexp'
 
 class App extends Component {
+  markers = [];
   state = {
     locations: [],
     fetchError: false,
+    query: '',
     center: {lat: 40.72477,lng: -74.002008}
+  }
+
+  updateQuery = (query) => {
+    this.setState({query});
   }
 
   componentDidMount() {
@@ -17,15 +26,10 @@ class App extends Component {
     .then((response) => {
       this.setState({locations: response.response.groups[0].items});
     })
-    .then(this.renderMap)
+    .then(this.initMap)
     .catch((err) => {
       this.setState({fetchError:true});
     });
-  }
-
-  renderMap = () => {
-    addScript(`https://maps.googleapis.com/maps/api/js?key=AIzaSyDr74hacqaOzOqckWb9TnmXYnk8AMyKCfk&callback=initMap`);
-    window.initMap = this.initMap;
   }
 
   initMap = () => {
@@ -33,35 +37,56 @@ class App extends Component {
       document.getElementById('map'), {zoom: 17, center: this.state.center});
     
     let infoWindow = new window.google.maps.InfoWindow();
-    this.state.locations.map((item) => {
+    this.state.locations.forEach((item) => {
       let marker = new window.google.maps.Marker({
+        name: item.venue.name,
         position: {lat: item.venue.location.lat, lng: item.venue.location.lng},
         map: map,
       });
+      this.markers.push(marker);
       let contentString = `<p>${item.venue.name}</p><p>${item.venue.location.address}</p>`;
       marker.addListener('click', () => {
         infoWindow.setContent(contentString);
         infoWindow.open(map,marker);
       });
     })
+    this.setState({map});
+  }
+
+  clickMarker = (name) => {
+    let marker = this.markers.filter((marker) => marker.name===name);
+    new window.google.maps.event.trigger(marker[0], 'click');
+  }
+
+  componentDidUpdate() {
+    this.updateMarkers();
+  }
+
+  updateMarkers = () => {
+    let showingMarkers=this.markers;
+    showingMarkers.forEach((marker) => {
+      marker.setMap(null);
+    })
+    if(this.state.query){
+      const match = new RegExp(escapeRegExp(this.state.query), 'i');
+      showingMarkers = showingMarkers.filter((marker) => match.test(marker.name));
+    }
+    showingMarkers.forEach((marker) => {
+      marker.setMap(this.state.map);
+    })
   }
 
   render() {
     return (
       <div className="App">
+        <div className="search-container">
+          <SearchBar query={this.state.query} onUpdateQuery={this.updateQuery}/>
+          <SearchResults query={this.state.query} locations={this.state.locations} onClickLocation={this.clickMarker}/>
+        </div>
         <div id="map"></div>
       </div>
     );
   }
-}
-
-function addScript(url) {
-  const script = document.getElementsByTagName('script')[0];
-  let newScript = document.createElement('script');
-  newScript.src = url;
-  newScript.async = true;
-  newScript.defer = true;
-  script.parentNode.insertBefore(newScript, script);
 }
 
 export default App;
