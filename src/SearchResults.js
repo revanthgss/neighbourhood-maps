@@ -13,7 +13,7 @@ const SearchResults = (props) => {
     return (
         <ul className="search-results">
             {showingLocations.map((location) => (
-                <li key={location.venue.id} onClick={() => {onClickLocation(location.venue.name)}}>{location.venue.name}</li>
+                <li key={location.venue.id} role="button" onClick={() => {onClickLocation(location.venue.name)}}>{location.venue.name}</li>
             ))}
         </ul>
     )
